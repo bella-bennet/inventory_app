@@ -188,6 +188,25 @@ a { color: var(--primary); text-decoration: none; }
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.app-title:hover {
+  opacity: 0.8;
+}
+
+.app-title-input {
+  font-size: 1.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  max-width: 400px;
 }
 
 .home-header-actions {

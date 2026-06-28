@@ -14,6 +14,7 @@ interface State {
   activeSheetId: string | null;
   toasts: Toast[];
   darkMode: boolean;
+  profileName: string;
   history: HistoryEntry[];
   historyIndex: number;
 }
@@ -30,6 +31,7 @@ type Action =
   | { type: 'ADD_TOAST'; toast: Toast }
   | { type: 'REMOVE_TOAST'; id: string }
   | { type: 'TOGGLE_DARK_MODE' }
+  | { type: 'SET_PROFILE_NAME'; name: string }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'PUSH_HISTORY' };
@@ -40,6 +42,7 @@ function defaultColumns(): Column[] {
     { id: generateId(), name: 'Bag' },
     { id: generateId(), name: 'Weight' },
     { id: generateId(), name: 'Supply Rate' },
+    { id: generateId(), name: 'Total Rate' },
     { id: generateId(), name: "Aarthi's Name" },
   ];
 }
@@ -60,19 +63,19 @@ function createNewSheet(): InventorySheet {
   };
 }
 
-function saveToDisk(sheets: InventorySheet[], darkMode: boolean) {
+function saveToDisk(sheets: InventorySheet[], darkMode: boolean, profileName: string) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ sheets, darkMode }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ sheets, darkMode, profileName }));
   } catch { }
 }
 
-function loadFromDisk(): { sheets: InventorySheet[]; darkMode: boolean } | null {
+function loadFromDisk(): { sheets: InventorySheet[]; darkMode: boolean; profileName: string } | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && Array.isArray(parsed.sheets)) {
-      return { sheets: parsed.sheets, darkMode: !!parsed.darkMode };
+      return { sheets: parsed.sheets, darkMode: !!parsed.darkMode, profileName: parsed.profileName || "Khurshid's Profile" };
     }
     return null;
   } catch {
@@ -152,6 +155,9 @@ function reducer(state: State, action: Action): State {
     case 'TOGGLE_DARK_MODE':
       return { ...state, darkMode: !state.darkMode };
 
+    case 'SET_PROFILE_NAME':
+      return { ...state, profileName: action.name };
+
     case 'UNDO': {
       if (state.historyIndex <= 0) return state;
       const idx = state.historyIndex - 1;
@@ -200,6 +206,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     activeSheetId: null,
     toasts: [],
     darkMode: saved?.darkMode ?? false,
+    profileName: saved?.profileName || "Khurshid's Profile",
     history: [],
     historyIndex: -1,
   });
@@ -211,8 +218,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       initialRef.current = false;
       return;
     }
-    saveToDisk(state.sheets, state.darkMode);
-  }, [state.sheets, state.darkMode]);
+    saveToDisk(state.sheets, state.darkMode, state.profileName);
+  }, [state.sheets, state.darkMode, state.profileName]);
 
   const addToast = useCallback((message: string, type: Toast['type'] = 'success') => {
     const id = generateId();

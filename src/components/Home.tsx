@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { SheetCard } from './SheetCard';
 import { EmptyState } from './EmptyState';
@@ -10,6 +10,31 @@ interface Props {
 export function Home({ onEditSheet }: Props) {
   const { state, dispatch, addToast } = useStore();
   const [search, setSearch] = useState('');
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileInput, setProfileInput] = useState(state.profileName);
+  const profileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingProfile && profileInputRef.current) {
+      profileInputRef.current.focus();
+      profileInputRef.current.select();
+    }
+  }, [editingProfile]);
+
+  useEffect(() => {
+    setProfileInput(state.profileName);
+  }, [state.profileName]);
+
+  function handleProfileSave() {
+    const trimmed = profileInput.trim();
+    if (trimmed && trimmed !== state.profileName) {
+      dispatch({ type: 'SET_PROFILE_NAME', name: trimmed });
+      addToast('Profile name updated');
+    } else {
+      setProfileInput(state.profileName);
+    }
+    setEditingProfile(false);
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -33,7 +58,24 @@ export function Home({ onEditSheet }: Props) {
     <div className="home">
       <header className="home-header">
         <div className="home-header-top">
-          <h1 className="app-title">Khurshid's Profile</h1>
+          {editingProfile ? (
+            <input
+              ref={profileInputRef}
+              className="app-title-input"
+              value={profileInput}
+              onChange={e => setProfileInput(e.target.value)}
+              onBlur={handleProfileSave}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleProfileSave();
+                if (e.key === 'Escape') { setProfileInput(state.profileName); setEditingProfile(false); }
+              }}
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <h1 className="app-title" onClick={() => setEditingProfile(true)} title="Click to rename">
+              {state.profileName}
+            </h1>
+          )}
           <div className="home-header-actions">
             <button
               className="theme-toggle"

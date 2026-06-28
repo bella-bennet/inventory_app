@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { InventorySheet, Column } from '../types';
 import { generateId } from '../utils';
 import { useStore } from '../store';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface Props {
   sheetId: string;
@@ -21,6 +22,7 @@ export function SheetEditor({ sheetId, onBack }: Props) {
   colWidthsRef.current = colWidths;
   const [draggedCol, setDraggedCol] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [columnToDelete, setColumnToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (sheet) {
@@ -130,6 +132,7 @@ export function SheetEditor({ sheetId, onBack }: Props) {
       addToast('Need at least one column', 'error');
       return;
     }
+    setColumnToDelete(null);
     pushHistory();
     const col = s.columns[colIdx];
     const newCols = s.columns.filter((_, i) => i !== colIdx);
@@ -277,14 +280,14 @@ export function SheetEditor({ sheetId, onBack }: Props) {
                     ) : (
                       <span
                         className="col-header-name"
-                        onDoubleClick={() => handleHeaderClick(col.id, col.name)}
+                        onClick={() => handleHeaderClick(col.id, col.name)}
                       >
                         {col.name}
                       </span>
                     )}
                     <button
                       className="col-delete-btn"
-                      onClick={e => { e.stopPropagation(); deleteColumn(ci); }}
+                      onClick={e => { e.stopPropagation(); setColumnToDelete(ci); }}
                       title="Delete column"
                     >
                       ✕
@@ -353,6 +356,16 @@ export function SheetEditor({ sheetId, onBack }: Props) {
       <div className="editor-status">
         {s.rows.length} row{s.rows.length !== 1 ? 's' : ''} · {s.columns.length} column{s.columns.length !== 1 ? 's' : ''}
       </div>
+
+      <ConfirmDialog
+        open={columnToDelete !== null}
+        title="Delete column?"
+        message={columnToDelete !== null ? `Are you sure you want to delete "${s.columns[columnToDelete]?.name}" column? All data in this column will be permanently removed.` : ''}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => columnToDelete !== null && deleteColumn(columnToDelete)}
+        onCancel={() => setColumnToDelete(null)}
+      />
     </div>
   );
 }
